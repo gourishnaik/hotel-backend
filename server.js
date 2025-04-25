@@ -2,9 +2,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const schedule = require('node-schedule');
+const twilio = require('twilio');
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Twilio client
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 const app = express();
 
@@ -20,7 +28,7 @@ app.use((req, res, next) => {
 
 // MongoDB Connection with retry logic
 const connectWithRetry = async () => {
-  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://gourishpnaik:<db_password>@cluster0.g5kanb2.mongodb.net/hotel-billing?retryWrites=true&w=majority&appName=Cluster0';
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://gourishpnaik:vwAeuFmGNjFkeipb@hotel-be.wxnbm4u.mongodb.net/?retryWrites=true&w=majority&appName=hotel-be';
   
   try {
     await mongoose.connect(MONGODB_URI, {
@@ -116,6 +124,82 @@ app.get('/health', (req, res) => {
     database: dbStatus,
     timestamp: new Date().toISOString()
   });
+});
+
+// Function to calculate grand total for the day
+const calculateDailyTotal = async () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const orders = await Order.find({
+    date: {
+      $gte: today,
+      $lt: tomorrow
+    },
+    status: 'completed'
+  });
+
+  const total = orders.reduce((sum, order) => sum + order.total, 0);
+  return total;
+};
+
+// Function to send SMS
+const sendSMS = async (message) => {
+  try {
+    await twilioClient.messages.create({
+      body: message,
+      to: process.env.ADMIN_PHONE_NUMBER,
+      from: process.env.TWILIO_PHONE_NUMBER
+    });
+    console.log('SMS sent successfully');
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+  }
+};
+
+// Schedule SMS notification at 11 PM
+schedule.scheduleJob('0 23 * * *', async () => {
+  console.log('Sending daily total SMS notification...');
+  const dailyTotal = await calculateDailyTotal();
+  const message = `Daily Total for ${new Date().toLocaleDateString()}: ₹${dailyTotal.toFixed(2)}`;
+  await sendSMS(message);
+});
+
+// Schedule data clearing at 11:59 PM
+schedule.scheduleJob('59 23 * * *', async () => {
+  console.log('Clearing daily data...');
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Archive completed orders before deleting
+    const ordersToArchive = await Order.find({
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      },
+      status: 'completed'
+    });
+
+    // TODO: Implement archiving logic if needed
+
+    // Delete completed orders
+    await Order.deleteMany({
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      },
+      status: 'completed'
+    });
+
+    console.log('Daily data cleared successfully');
+  } catch (error) {
+    console.error('Error clearing daily data:', error);
+  }
 });
 
 // Error handling middleware
