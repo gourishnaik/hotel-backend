@@ -115,6 +115,25 @@ app.get('/api/orders/completed', async (req, res) => {
   }
 });
 
+// Calculate total amount endpoint
+app.get('/api/orders/total', async (req, res) => {
+  console.log('Received GET request to /api/orders/total');
+  try {
+    const total = await Order.aggregate([
+      { $match: { status: 'completed' } },
+      { $group: { _id: null, totalAmount: { $sum: '$total' } } }
+    ]);
+    
+    res.json({
+      totalAmount: total.length > 0 ? total[0].totalAmount : 0,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error calculating total amount:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   console.log('Health check requested');
@@ -222,5 +241,6 @@ app.listen(PORT, () => {
   console.log('- GET /health');
   console.log('- GET /api/orders');
   console.log('- GET /api/orders/completed');
+  console.log('- GET /api/orders/total');
   console.log('- POST /api/orders');
 }); 
