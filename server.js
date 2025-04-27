@@ -218,36 +218,48 @@ schedule.scheduleJob('30 17 * * *', async () => {
 // Schedule data clearing at 12 AM IST (18:30 UTC)
 // Schedule data clearing at 12:00 AM IST
 // Schedule daily clearing
-schedule.scheduleJob('30 18 * * *', async () => { // 18:30 UTC = 00:00 IST
-  console.log('Scheduled Job: Clearing daily completed orders at 12 AM IST...');
+schedule.scheduleJob('*/5 * * * *', async () => { 
+  console.log('Scheduled Check: Trying to clear orders if it is 12AM IST...');
 
-  try {
-    const todayIST = moment.tz('Asia/Kolkata').startOf('day').toDate(); 
-    const tomorrowIST = moment(todayIST).add(1, 'day').toDate();
+  const currentIST = moment.tz('Asia/Kolkata');
+  const currentHour = currentIST.hour();
+  const currentMinute = currentIST.minute();
 
-    console.log(`Target Deletion Range [IST]: ${todayIST} to ${tomorrowIST}`);
+  // Only proceed if between 00:00 and 00:05 IST
+  if (currentHour === 0 && currentMinute <= 5) {
+    console.log('It is between 12:00-12:05AM IST. Proceeding with clearing...');
 
-    const ordersToDelete = await Order.find({
-      date: {
-        $gte: todayIST,
-        $lt: tomorrowIST
-      },
-      status: 'completed'
-    });
+    try {
+      const todayIST = moment.tz('Asia/Kolkata').startOf('day').toDate(); 
+      const tomorrowIST = moment(todayIST).add(1, 'day').toDate();
 
-    console.log(`Found ${ordersToDelete.length} completed orders to delete.`);
+      console.log(`Target Deletion Range [IST]: ${todayIST} to ${tomorrowIST}`);
 
-    if (ordersToDelete.length > 0) {
-      await Order.deleteMany({
-        _id: { $in: ordersToDelete.map(o => o._id) }
+      const ordersToDelete = await Order.find({
+        date: {
+          $gte: todayIST,
+          $lt: tomorrowIST
+        },
+        status: 'completed'
       });
-      console.log('Orders deleted successfully.');
-    } else {
-      console.log('No completed orders found for today. Nothing deleted.');
+
+      console.log(`Found ${ordersToDelete.length} completed orders to delete.`);
+
+      if (ordersToDelete.length > 0) {
+        await Order.deleteMany({
+          _id: { $in: ordersToDelete.map(o => o._id) }
+        });
+        console.log('Orders deleted successfully.');
+      } else {
+        console.log('No completed orders found for today. Nothing deleted.');
+      }
+
+    } catch (error) {
+      console.error('Error during scheduled clearing:', error);
     }
 
-  } catch (error) {
-    console.error('Error during scheduled clearing:', error);
+  } else {
+    console.log(`Current IST time is ${currentIST.format('HH:mm')}. Not time to clear yet.`);
   }
 });
 
