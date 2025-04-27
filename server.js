@@ -186,41 +186,59 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 8:11 AM IST
-schedule.scheduleJob('11 8 * * *', { timezone: 'Asia/Kolkata' }, async () => {
-  console.log('Starting daily data clearing process at 8:11 AM IST...');
+// Schedule data clearing at 12:00 AM IST
+schedule.scheduleJob('0 0 * * *', { timezone: 'Asia/Kolkata' }, async () => {
+  console.log('Starting daily data clearing process at 12:00 AM IST...');
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    console.log(`Clearing orders between ${today.toISOString()} and ${tomorrow.toISOString()}`);
-
-    // Archive completed orders before deleting
+    // Find all completed orders
     const ordersToArchive = await Order.find({
-      date: {
-        $gte: today,
-        $lt: tomorrow
-      },
       status: 'completed'
     });
 
-    console.log(`Found ${ordersToArchive.length} orders to archive`);
+    console.log(`Found ${ordersToArchive.length} completed orders to archive`);
 
-    // Delete completed orders
+    // Delete all completed orders
     const deleteResult = await Order.deleteMany({
-      date: {
-        $gte: today,
-        $lt: tomorrow
-      },
       status: 'completed'
     });
 
     console.log(`Successfully deleted ${deleteResult.deletedCount} orders`);
-    console.log('Daily data cleared successfully at 8:11 AM IST');
+    console.log('Daily data cleared successfully at 12:00 AM IST');
   } catch (error) {
     console.error('Error clearing daily data:', error);
+  }
+});
+
+// Test endpoint to manually trigger data clearing
+app.post('/api/test/clear-data', async (req, res) => {
+  console.log('Manual data clearing triggered...');
+  try {
+    // Find all completed orders
+    const ordersToArchive = await Order.find({
+      status: 'completed'
+    });
+
+    console.log(`Found ${ordersToArchive.length} completed orders to archive`);
+
+    // Delete all completed orders
+    const deleteResult = await Order.deleteMany({
+      status: 'completed'
+    });
+
+    console.log(`Successfully deleted ${deleteResult.deletedCount} orders`);
+    res.json({
+      success: true,
+      message: 'Data cleared successfully',
+      deletedCount: deleteResult.deletedCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in manual data clearing:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error clearing data',
+      error: error.message
+    });
   }
 });
 
