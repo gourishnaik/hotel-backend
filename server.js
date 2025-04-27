@@ -186,53 +186,38 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 12:00 AM (midnight)
+// Schedule data clearing at 12:00 AM IST
 schedule.scheduleJob('0 0 * * *', async () => {
-  const currentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-  console.log(`[${currentTime}] Starting daily data clearing at 12:00 AM...`);
+  console.log('Clearing daily data at 12 AM IST...');
   try {
-    // Get current date in IST
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-    const istDate = new Date(now.getTime() + istOffset);
-    
-    // Set to start of day in IST
-    const startOfDay = new Date(istDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    startOfDay.setTime(startOfDay.getTime() - istOffset); // Convert back to UTC
-    
-    // Set to end of day in IST
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
-    endOfDay.setTime(endOfDay.getTime() - istOffset); // Convert back to UTC
-
-    console.log(`[${currentTime}] Clearing orders between ${startOfDay.toLocaleString()} and ${endOfDay.toLocaleString()}`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Archive completed orders before deleting
     const ordersToArchive = await Order.find({
       date: {
-        $gte: startOfDay,
-        $lt: endOfDay
+        $gte: today,
+        $lt: tomorrow
       },
       status: 'completed'
     });
-
-    console.log(`[${currentTime}] Found ${ordersToArchive.length} orders to archive`);
 
     // TODO: Implement archiving logic if needed
 
     // Delete completed orders
-    const deleteResult = await Order.deleteMany({
+    await Order.deleteMany({
       date: {
-        $gte: startOfDay,
-        $lt: endOfDay
+        $gte: today,
+        $lt: tomorrow
       },
       status: 'completed'
     });
 
-    console.log(`[${currentTime}] Daily data cleared successfully at 12:00 AM. Deleted ${deleteResult.deletedCount} orders.`);
+    console.log('Daily data cleared successfully at 12 AM IST');
   } catch (error) {
-    console.error(`[${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}] Error clearing daily data:`, error);
+    console.error('Error clearing daily data:', error);
   }
 });
 
