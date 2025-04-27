@@ -215,8 +215,9 @@ schedule.scheduleJob('30 17 * * *', async () => {
 });
 
 // Schedule data clearing at 12 AM IST (18:30 UTC)
-schedule.scheduleJob('30 18 * * *', async () => {
-  console.log('Clearing daily data at 12AM IST...');
+// Schedule data clearing at 12:00 AM IST
+schedule.scheduleJob('0 0 * * *', async () => {
+  console.log('Clearing daily data at 12 AM IST...');
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -236,6 +237,7 @@ schedule.scheduleJob('30 18 * * *', async () => {
     console.error('Error clearing daily data:', error);
   }
 });
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
