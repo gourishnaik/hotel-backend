@@ -186,9 +186,9 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 8:08 AM IST
-schedule.scheduleJob('8 8 * * *', { timezone: 'Asia/Kolkata' }, async () => {
-  console.log('Starting daily data clearing process at 8:08 AM IST...');
+// Schedule data clearing at 8:11 AM IST
+schedule.scheduleJob('11 8 * * *', { timezone: 'Asia/Kolkata' }, async () => {
+  console.log('Starting daily data clearing process at 8:11 AM IST...');
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -218,7 +218,7 @@ schedule.scheduleJob('8 8 * * *', { timezone: 'Asia/Kolkata' }, async () => {
     });
 
     console.log(`Successfully deleted ${deleteResult.deletedCount} orders`);
-    console.log('Daily data cleared successfully at 8:08 AM IST');
+    console.log('Daily data cleared successfully at 8:11 AM IST');
   } catch (error) {
     console.error('Error clearing daily data:', error);
   }
