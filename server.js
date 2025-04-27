@@ -186,20 +186,30 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 12:00 AM IST
-schedule.scheduleJob('0 0 * * *', async () => {
-  console.log('Clearing daily data at 12 AM IST...');
+// Schedule data clearing at 8:27 AM
+schedule.scheduleJob('27 8 * * *', async () => {
+  console.log('Clearing daily data at 8:27 AM...');
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get current date in IST
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const istDate = new Date(now.getTime() + istOffset);
+    
+    // Set to start of day in IST
+    const startOfDay = new Date(istDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setTime(startOfDay.getTime() - istOffset); // Convert back to UTC
+    
+    // Set to end of day in IST
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    endOfDay.setTime(endOfDay.getTime() - istOffset); // Convert back to UTC
 
     // Archive completed orders before deleting
     const ordersToArchive = await Order.find({
       date: {
-        $gte: today,
-        $lt: tomorrow
+        $gte: startOfDay,
+        $lt: endOfDay
       },
       status: 'completed'
     });
@@ -207,15 +217,15 @@ schedule.scheduleJob('0 0 * * *', async () => {
     // TODO: Implement archiving logic if needed
 
     // Delete completed orders
-    await Order.deleteMany({
+    const deleteResult = await Order.deleteMany({
       date: {
-        $gte: today,
-        $lt: tomorrow
+        $gte: startOfDay,
+        $lt: endOfDay
       },
       status: 'completed'
     });
 
-    console.log('Daily data cleared successfully at 12 AM IST');
+    console.log(`Daily data cleared successfully at 8:27 AM. Deleted ${deleteResult.deletedCount} orders.`);
   } catch (error) {
     console.error('Error clearing daily data:', error);
   }
