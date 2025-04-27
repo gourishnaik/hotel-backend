@@ -207,61 +207,7 @@ const sendSMS = async (message) => {
   }
 };
 
-// Schedule SMS notification at 11 PM IST (17:30 UTC)
-schedule.scheduleJob('30 17 * * *', async () => {
-  console.log('Sending daily total SMS notification at 11PM IST...');
-  const dailyTotal = await calculateDailyTotal();
-  const message = `Daily Total for ${new Date().toLocaleDateString()}: ₹${dailyTotal.toFixed(2)}`;
-  await sendSMS(message);
-});
 
-// Schedule data clearing at 12 AM IST (18:30 UTC)
-// Schedule data clearing at 12:00 AM IST
-// Schedule daily clearing
-schedule.scheduleJob('*/5 * * * *', async () => { 
-  console.log('Scheduled Check: Trying to clear orders if it is 12AM IST...');
-
-  const currentIST = moment.tz('Asia/Kolkata');
-  const currentHour = currentIST.hour();
-  const currentMinute = currentIST.minute();
-
-  // Only proceed if between 00:00 and 00:05 IST
-  if (currentHour === 0 && currentMinute <= 5) {
-    console.log('It is between 12:00-12:05AM IST. Proceeding with clearing...');
-
-    try {
-      const todayIST = moment.tz('Asia/Kolkata').startOf('day').toDate(); 
-      const tomorrowIST = moment(todayIST).add(1, 'day').toDate();
-
-      console.log(`Target Deletion Range [IST]: ${todayIST} to ${tomorrowIST}`);
-
-      const ordersToDelete = await Order.find({
-        date: {
-          $gte: todayIST,
-          $lt: tomorrowIST
-        },
-        status: 'completed'
-      });
-
-      console.log(`Found ${ordersToDelete.length} completed orders to delete.`);
-
-      if (ordersToDelete.length > 0) {
-        await Order.deleteMany({
-          _id: { $in: ordersToDelete.map(o => o._id) }
-        });
-        console.log('Orders deleted successfully.');
-      } else {
-        console.log('No completed orders found for today. Nothing deleted.');
-      }
-
-    } catch (error) {
-      console.error('Error during scheduled clearing:', error);
-    }
-
-  } else {
-    console.log(`Current IST time is ${currentIST.format('HH:mm')}. Not time to clear yet.`);
-  }
-});
 
 
 
