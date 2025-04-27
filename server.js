@@ -186,9 +186,9 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 12:00 AM IST
-schedule.scheduleJob('0 0 * * *', { timezone: 'Asia/Kolkata' }, async () => {
-  console.log('Starting daily data clearing process at 12:00 AM IST...');
+// Schedule data clearing at 8:19 AM IST
+schedule.scheduleJob('19 8 * * *', { timezone: 'Asia/Kolkata' }, async () => {
+  console.log('Starting daily data clearing process at 8:19 AM IST...');
   console.log('Current time:', new Date().toISOString());
   
   try {
