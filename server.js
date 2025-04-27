@@ -189,7 +189,15 @@ schedule.scheduleJob('0 23 * * *', async () => {
 // Schedule data clearing at 12:00 AM IST
 schedule.scheduleJob('0 0 * * *', { timezone: 'Asia/Kolkata' }, async () => {
   console.log('Starting daily data clearing process at 12:00 AM IST...');
+  console.log('Current time:', new Date().toISOString());
+  
   try {
+    // Verify MongoDB connection
+    if (mongoose.connection.readyState !== 1) {
+      console.error('MongoDB not connected. Attempting to reconnect...');
+      await connectWithRetry();
+    }
+
     // Find all completed orders
     const ordersToArchive = await Order.find({
       status: 'completed'
@@ -197,22 +205,51 @@ schedule.scheduleJob('0 0 * * *', { timezone: 'Asia/Kolkata' }, async () => {
 
     console.log(`Found ${ordersToArchive.length} completed orders to archive`);
 
+    if (ordersToArchive.length === 0) {
+      console.log('No completed orders found to clear');
+      return;
+    }
+
     // Delete all completed orders
     const deleteResult = await Order.deleteMany({
       status: 'completed'
     });
 
-    console.log(`Successfully deleted ${deleteResult.deletedCount} orders`);
-    console.log('Daily data cleared successfully at 12:00 AM IST');
+    if (deleteResult.deletedCount === 0) {
+      console.log('No orders were deleted');
+    } else {
+      console.log(`Successfully deleted ${deleteResult.deletedCount} orders`);
+    }
+
+    // Verify deletion
+    const remainingOrders = await Order.countDocuments({ status: 'completed' });
+    console.log(`Remaining completed orders: ${remainingOrders}`);
+
+    console.log('Daily data clearing process completed successfully');
   } catch (error) {
-    console.error('Error clearing daily data:', error);
+    console.error('Error in daily data clearing process:', error);
+    // Attempt to send notification about the error
+    try {
+      await sendSMS(`Error in daily data clearing: ${error.message}`);
+    } catch (smsError) {
+      console.error('Failed to send error notification:', smsError);
+    }
   }
 });
 
-// Test endpoint to manually trigger data clearing
-app.post('/api/test/clear-data', async (req, res) => {
-  console.log('Manual data clearing triggered...');
+// Manual endpoint to clear completed orders
+app.post('/api/clear-completed-orders', async (req, res) => {
+  console.log('Manual data clearing requested...');
   try {
+    const { confirm } = req.body;
+    
+    if (!confirm) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please confirm the deletion by setting confirm to true'
+      });
+    }
+
     // Find all completed orders
     const ordersToArchive = await Order.find({
       status: 'completed'
@@ -264,4 +301,5 @@ app.listen(PORT, () => {
   console.log('- GET /api/orders/completed');
   console.log('- GET /api/orders/total');
   console.log('- POST /api/orders');
+  console.log('- POST /api/clear-completed-orders');
 }); 
