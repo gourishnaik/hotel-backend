@@ -186,9 +186,9 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 8:27 AM
-schedule.scheduleJob('27 8 * * *', async () => {
-  console.log('Clearing daily data at 8:27 AM...');
+// Schedule data clearing at 8:29 AM
+schedule.scheduleJob('29 8 * * *', async () => {
+  console.log('Clearing daily data at 8:29 AM...');
   try {
     // Get current date in IST
     const now = new Date();
@@ -225,7 +225,7 @@ schedule.scheduleJob('27 8 * * *', async () => {
       status: 'completed'
     });
 
-    console.log(`Daily data cleared successfully at 8:27 AM. Deleted ${deleteResult.deletedCount} orders.`);
+    console.log(`Daily data cleared successfully at 8:29 AM. Deleted ${deleteResult.deletedCount} orders.`);
   } catch (error) {
     console.error('Error clearing daily data:', error);
   }
