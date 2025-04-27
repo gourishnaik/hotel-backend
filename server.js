@@ -4,7 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const schedule = require('node-schedule');
 const twilio = require('twilio');
-const schedule = require('node-schedule');
+
 const moment = require('moment-timezone'); // Install via: npm install moment-timezone
 // Load environment variables
 dotenv.config();
