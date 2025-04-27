@@ -4,7 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const schedule = require('node-schedule');
 const twilio = require('twilio');
-
+const schedule = require('node-schedule');
+const moment = require('moment-timezone'); // Install via: npm install moment-timezone
 // Load environment variables
 dotenv.config();
 
@@ -216,27 +217,40 @@ schedule.scheduleJob('30 17 * * *', async () => {
 
 // Schedule data clearing at 12 AM IST (18:30 UTC)
 // Schedule data clearing at 12:00 AM IST
-schedule.scheduleJob('0 0 * * *', async () => {
-  console.log('Clearing daily data at 12 AM IST...');
-  try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+// Schedule daily clearing
+schedule.scheduleJob('30 18 * * *', async () => { // 18:30 UTC = 00:00 IST
+  console.log('Scheduled Job: Clearing daily completed orders at 12 AM IST...');
 
-    await Order.deleteMany({
+  try {
+    const todayIST = moment.tz('Asia/Kolkata').startOf('day').toDate(); 
+    const tomorrowIST = moment(todayIST).add(1, 'day').toDate();
+
+    console.log(`Target Deletion Range [IST]: ${todayIST} to ${tomorrowIST}`);
+
+    const ordersToDelete = await Order.find({
       date: {
-        $gte: today,
-        $lt: tomorrow
+        $gte: todayIST,
+        $lt: tomorrowIST
       },
       status: 'completed'
     });
 
-    console.log('Daily data cleared successfully at 12 AM IST');
+    console.log(`Found ${ordersToDelete.length} completed orders to delete.`);
+
+    if (ordersToDelete.length > 0) {
+      await Order.deleteMany({
+        _id: { $in: ordersToDelete.map(o => o._id) }
+      });
+      console.log('Orders deleted successfully.');
+    } else {
+      console.log('No completed orders found for today. Nothing deleted.');
+    }
+
   } catch (error) {
-    console.error('Error clearing daily data:', error);
+    console.error('Error during scheduled clearing:', error);
   }
 });
+
 
 
 // Error handling middleware
