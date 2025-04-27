@@ -75,14 +75,43 @@ const orderSchema = new mongoose.Schema({
 const Order = mongoose.model('Order', orderSchema);
 
 // Routes
+// app.post('/api/orders', async (req, res) => {
+//   console.log('Received POST request to /api/orders');
+//   try {
+//     const orderData = req.body;
+//     if (orderData.id) {
+//       orderData.orderId = orderData.id;
+//       delete orderData.id;
+//     }
+//     const order = new Order(orderData);
+//     await order.save();
+//     res.status(201).json(order);
+//   } catch (error) {
+//     console.error('Error saving order:', error);
+//     res.status(400).json({ message: error.message });
+//   }
+// });
+
 app.post('/api/orders', async (req, res) => {
   console.log('Received POST request to /api/orders');
   try {
     const orderData = req.body;
+
     if (orderData.id) {
       orderData.orderId = orderData.id;
       delete orderData.id;
     }
+
+    // Always set order as 'completed' unless specified
+    if (!orderData.status) {
+      orderData.status = 'completed'; // Default to completed
+    }
+
+    // Ensure date is correct
+    if (!orderData.date) {
+      orderData.date = new Date();
+    }
+
     const order = new Order(orderData);
     await order.save();
     res.status(201).json(order);
