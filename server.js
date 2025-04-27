@@ -187,13 +187,15 @@ schedule.scheduleJob('0 23 * * *', async () => {
 });
 
 // Schedule data clearing at 12:00 AM IST
-schedule.scheduleJob('0 0 * * *', async () => {
-  console.log('Clearing daily data at 12 AM IST...');
+schedule.scheduleJob('0 0 * * *', { timezone: 'Asia/Kolkata' }, async () => {
+  console.log('Starting daily data clearing process at 12 AM IST...');
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+
+    console.log(`Clearing orders between ${today.toISOString()} and ${tomorrow.toISOString()}`);
 
     // Archive completed orders before deleting
     const ordersToArchive = await Order.find({
@@ -204,10 +206,10 @@ schedule.scheduleJob('0 0 * * *', async () => {
       status: 'completed'
     });
 
-    // TODO: Implement archiving logic if needed
+    console.log(`Found ${ordersToArchive.length} orders to archive`);
 
     // Delete completed orders
-    await Order.deleteMany({
+    const deleteResult = await Order.deleteMany({
       date: {
         $gte: today,
         $lt: tomorrow
@@ -215,6 +217,7 @@ schedule.scheduleJob('0 0 * * *', async () => {
       status: 'completed'
     });
 
+    console.log(`Successfully deleted ${deleteResult.deletedCount} orders`);
     console.log('Daily data cleared successfully at 12 AM IST');
   } catch (error) {
     console.error('Error clearing daily data:', error);
