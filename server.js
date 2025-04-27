@@ -186,10 +186,10 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 8:38 AM
-schedule.scheduleJob('38 8 * * *', async () => {
+// Schedule data clearing at 12:00 AM (midnight)
+schedule.scheduleJob('0 0 * * *', async () => {
   const currentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-  console.log(`[${currentTime}] Starting daily data clearing at 8:38 AM...`);
+  console.log(`[${currentTime}] Starting daily data clearing at 12:00 AM...`);
   try {
     // Get current date in IST
     const now = new Date();
@@ -230,7 +230,7 @@ schedule.scheduleJob('38 8 * * *', async () => {
       status: 'completed'
     });
 
-    console.log(`[${currentTime}] Daily data cleared successfully at 8:38 AM. Deleted ${deleteResult.deletedCount} orders.`);
+    console.log(`[${currentTime}] Daily data cleared successfully at 12:00 AM. Deleted ${deleteResult.deletedCount} orders.`);
   } catch (error) {
     console.error(`[${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}] Error clearing daily data:`, error);
   }
