@@ -28,7 +28,7 @@ app.use((req, res, next) => {
 
 // MongoDB Connection with retry logic
 const connectWithRetry = async () => {
-  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://gourishpnaik:vwAeuFmGNjFkeipb@hotel-be.wxnbm4u.mongodb.net/?retryWrites=true&w=majority&appName=hotel-be';
+  const MONGODB_URI = process.env.MONGODB_URI || 'your-default-mongo-uri';
   
   try {
     await mongoose.connect(MONGODB_URI, {
@@ -115,7 +115,6 @@ app.get('/api/orders/completed', async (req, res) => {
   }
 });
 
-// Calculate total amount endpoint
 app.get('/api/orders/total', async (req, res) => {
   console.log('Received GET request to /api/orders/total');
   try {
@@ -145,7 +144,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Function to calculate grand total for the day
+// Calculate daily total
 const calculateDailyTotal = async () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -178,35 +177,23 @@ const sendSMS = async (message) => {
   }
 };
 
-// Schedule SMS notification at 11 PM
-schedule.scheduleJob('0 23 * * *', async () => {
-  console.log('Sending daily total SMS notification...');
+// Schedule SMS notification at 11 PM IST (17:30 UTC)
+schedule.scheduleJob('30 17 * * *', async () => {
+  console.log('Sending daily total SMS notification at 11PM IST...');
   const dailyTotal = await calculateDailyTotal();
   const message = `Daily Total for ${new Date().toLocaleDateString()}: ₹${dailyTotal.toFixed(2)}`;
   await sendSMS(message);
 });
 
-// Schedule data clearing at 12:00 AM IST
-schedule.scheduleJob('0 0 * * *', async () => {
-  console.log('Clearing daily data at 12 AM IST...');
+// Schedule data clearing at 12 AM IST (18:30 UTC)
+schedule.scheduleJob('30 18 * * *', async () => {
+  console.log('Clearing daily data at 12AM IST...');
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Archive completed orders before deleting
-    const ordersToArchive = await Order.find({
-      date: {
-        $gte: today,
-        $lt: tomorrow
-      },
-      status: 'completed'
-    });
-
-    // TODO: Implement archiving logic if needed
-
-    // Delete completed orders
     await Order.deleteMany({
       date: {
         $gte: today,
@@ -243,4 +230,4 @@ app.listen(PORT, () => {
   console.log('- GET /api/orders/completed');
   console.log('- GET /api/orders/total');
   console.log('- POST /api/orders');
-}); 
+});
