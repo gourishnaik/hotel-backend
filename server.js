@@ -2,10 +2,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const schedule = require('node-schedule');
 const twilio = require('twilio');
+const cron = require('node-cron');
 
-const moment = require('moment-timezone'); // Install via: npm install moment-timezone
+
 // Load environment variables
 dotenv.config();
 
@@ -92,6 +92,19 @@ const Order = mongoose.model('Order', orderSchema);
 //     res.status(400).json({ message: error.message });
 //   }
 // });
+
+// Clear orders collection daily at 12:00 AM IST
+cron.schedule('0 0 * * *', async () => {
+  console.log('Running daily collection clearing job at 12 AM IST...');
+  try {
+    await Order.deleteMany({});
+    console.log('All orders cleared successfully.');
+  } catch (error) {
+    console.error('Error clearing orders:', error);
+  }
+}, {
+  timezone: 'Asia/Kolkata'
+});
 
 app.post('/api/orders', async (req, res) => {
   console.log('Received POST request to /api/orders');
