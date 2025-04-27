@@ -186,9 +186,10 @@ schedule.scheduleJob('0 23 * * *', async () => {
   await sendSMS(message);
 });
 
-// Schedule data clearing at 8:35 AM
-schedule.scheduleJob('35 8 * * *', async () => {
-  console.log('Clearing daily data at 8:35 AM...');
+// Schedule data clearing at 8:38 AM
+schedule.scheduleJob('38 8 * * *', async () => {
+  const currentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+  console.log(`[${currentTime}] Starting daily data clearing at 8:38 AM...`);
   try {
     // Get current date in IST
     const now = new Date();
@@ -205,6 +206,8 @@ schedule.scheduleJob('35 8 * * *', async () => {
     endOfDay.setDate(endOfDay.getDate() + 1);
     endOfDay.setTime(endOfDay.getTime() - istOffset); // Convert back to UTC
 
+    console.log(`[${currentTime}] Clearing orders between ${startOfDay.toLocaleString()} and ${endOfDay.toLocaleString()}`);
+
     // Archive completed orders before deleting
     const ordersToArchive = await Order.find({
       date: {
@@ -213,6 +216,8 @@ schedule.scheduleJob('35 8 * * *', async () => {
       },
       status: 'completed'
     });
+
+    console.log(`[${currentTime}] Found ${ordersToArchive.length} orders to archive`);
 
     // TODO: Implement archiving logic if needed
 
@@ -225,9 +230,9 @@ schedule.scheduleJob('35 8 * * *', async () => {
       status: 'completed'
     });
 
-    console.log(`Daily data cleared successfully at 8:35 AM. Deleted ${deleteResult.deletedCount} orders.`);
+    console.log(`[${currentTime}] Daily data cleared successfully at 8:38 AM. Deleted ${deleteResult.deletedCount} orders.`);
   } catch (error) {
-    console.error('Error clearing daily data:', error);
+    console.error(`[${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}] Error clearing daily data:`, error);
   }
 });
 
