@@ -94,7 +94,21 @@ const Order = mongoose.model('Order', orderSchema);
 // });
 
 // Clear orders collection daily at 12:00 AM IST
-cron.schedule('0 0 * * *', async () => {
+// cron.schedule('0 0 * * *', async () => {
+//   console.log('Running daily collection clearing job at 12 AM IST...');
+//   try {
+//     await Order.deleteMany({});
+//     console.log('All orders cleared successfully.');
+//   } catch (error) {
+//     console.error('Error clearing orders:', error);
+//   }
+// }, {
+//   timezone: 'Asia/Kolkata'
+// });
+
+
+console.log('Scheduling cron to clear orders at 12AM IST (Adjusted to 6:30 PM UTC)');
+cron.schedule('30 18 * * *', async () => {
   console.log('Running daily collection clearing job at 12 AM IST...');
   try {
     await Order.deleteMany({});
@@ -102,8 +116,6 @@ cron.schedule('0 0 * * *', async () => {
   } catch (error) {
     console.error('Error clearing orders:', error);
   }
-}, {
-  timezone: 'Asia/Kolkata'
 });
 
 app.post('/api/orders', async (req, res) => {
